@@ -71,7 +71,7 @@ public:
     iterator begin() noexcept { return head; }
     T& back() noexcept { return head->data; }
     const T& back() const noexcept { return head->data; }
-    void erase(iterator i);
+    void erase(iterator pos);
 
     friend std::ostream& operator<< <>(std::ostream& os, const circular_forward_list& l);
 };
@@ -91,15 +91,21 @@ circular_forward_list<T>::~circular_forward_list()
 }
 
 template <typename T>
-void circular_forward_list<T>::erase(iterator i)
+void circular_forward_list<T>::erase(iterator pos)
 {
-    node * p = head;
-    while (p->next != i.p)  // find the previous node
-        p = p->next;
-    p->next = i.p->next;
-    if (tail == i.p)
-        tail = p;
-    delete i.p;
+    node * prev = head;         // previous node of pos
+    // assume a non-empty list as we are deleting nodes
+    while (prev->next != pos.p)   // find the previous node
+        prev = prev->next;
+    if (prev == pos.p)            // deleting the only remaining node
+        head = nullptr;
+    else {
+        if (head == pos.p)       // deleting head
+            head = pos.p->next;
+        prev->next = pos.p->next;
+    }
+    --var_size;
+    delete pos.p;
 }
 
 template <typename T>
