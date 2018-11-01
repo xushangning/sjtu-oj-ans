@@ -1,8 +1,5 @@
 #include <iostream>
 
-namespace sx
-{
-
 template <typename T>
 class circular_forward_list
 {
@@ -13,7 +10,7 @@ private:
         node * next;
     };
     int var_size;
-    node * head, * tail;
+    node * head;
 public:
     class const_iterator
     {
@@ -51,95 +48,83 @@ public:
             return temp;
         }
         T& operator*() const noexcept { return p->data; }
+        operator const_iterator() { return p; }
 
         friend class circular_forward_list;
     };
 
-    circular_forward_list() noexcept : var_size(0), head(nullptr), tail(nullptr) {}
+    circular_forward_list() noexcept : var_size(0), head(nullptr) {}
     ~circular_forward_list();
 
     int size() const noexcept { return var_size; }
     bool empty() const noexcept { return !var_size; }
     iterator begin() noexcept { return head; }
-    T& back() noexcept { return head->data; }
-    const T& back() const noexcept { return head->data; }
-    void push_back(const T& value);
-    void push_back(T&& value);
-    void pop_back();
-    void erase(iterator i);
+    iterator insert(const_iterator pos, const T& value, iterator prev = nullptr);
+    void erase(iterator pos, iterator prev = nullptr);
 };
 
-// watch out for n = 1
 template <typename T>
 circular_forward_list<T>::~circular_forward_list()
 {
-    node * temp;
-    while (head && head != tail)
-    {
-        temp = head;
-        head = head->next;
-        delete temp;
-    }
-    delete head;
-}
-
-template <typename T>
-void circular_forward_list<T>::push_back(const T& value)
-{
-    if (empty()) {
-        head = new node {value, nullptr};
-        head->next = tail = head;
-    }
-    else
-        tail->next = head = new node {value, head};
-    ++var_size;
-}
-
-template <typename T>
-void circular_forward_list<T>::push_back(T&& value)
-{
-    if (empty()) {
-        head = new node {value, nullptr};
-        head->next = tail = head;
-    }
-    else
-        tail->next = head = new node {value, head};
-    ++var_size;
-}
-
-template <typename T>
-void circular_forward_list<T>::pop_back()
-{
-    if (!empty()) {
-        if (head->next) {
-            node * temp = head;
-            head = head->next;
+    if (head) {
+        node * temp, * p = head->next;
+        delete head;        // delete the head first
+        // After deleting the head, delete the nodes after head until the list
+        // circles back to head.
+        while (p != head) {
+            temp = p;
+            p = p->next;
             delete temp;
         }
-        else {
-            delete head;
-            head = nullptr;  // must be set to the null pointer
-        }
-        --var_size;
     }
 }
 
+/**
+* prev: an iterator pointing to the node that is previous to the iterator pos,
+* optionally supplied to eliminate the need for searching the list for a
+* previous node of pos
+*/
 template <typename T>
-void circular_forward_list<T>::erase(iterator i)
+typename circular_forward_list<T>::iterator
+circular_forward_list<T>::insert(const_iterator pos, const T& value, iterator prev)
 {
-    if (head == tail)       // only one node left
+    if (empty()) {
+        head->next = head = new node {value, nullptr};
+        ++var_size;
+        return head;
+    }
+    else {
+        // if prev is not a node previous to pos
+        if (prev.p == nullptr || prev.p->next != pos.p)
+            // find the previous node of pos
+            for (prev.p = head; prev.p->next != pos.p; ++prev);
+        prev.p->next = new node {value, const_cast<node *>(pos.p)};
+        ++var_size;
+        return prev.p->next;
+    }
+}
+
+/**
+* prev: an iterator pointing to the node that is previous to the iterator pos,
+* optionally supplied to eliminate the need for searching the list for a
+* previous node of pos
+*/
+template <typename T>
+void circular_forward_list<T>::erase(iterator pos, iterator prev)
+{
+    if (prev.p == nullptr || prev.p->next != pos.p)
+        // find the previous node
+        for (prev.p = head; prev.p->next != pos.p; ++prev);
+    // assume a non-empty list as we are deleting nodes
+    if (prev.p == pos.p)            // deleting the only remaining node
         head = nullptr;
     else {
-        node * p = head;
-        while (p->next != i.p)  // find the previous node
-            p = p->next;
-        p->next = i.p->next;
-        if (tail == i.p)
-            tail = p;
+        if (head == pos.p)       // deleting head
+            head = pos.p->next;
+        prev.p->next = pos.p->next;
     }
-    delete i.p;
-}
-
+    --var_size;
+    delete pos.p;
 }
 
 int main()
@@ -148,21 +133,23 @@ int main()
 
     int n, m, k;
     std::cin >> n >> m >> k;
-    sx::circular_forward_list<int> l;
+    circular_forward_list<int> l;
+    circular_forward_list<int>::iterator iter = nullptr;
+    for (int i = 1; i <= n; ++i)
+        iter = l.insert(l.begin(), i, iter);
+    // iter now points to the node labeled n, whose "next" points to l.begin().
 
-    for (int i = n; i > 0; --i)
-        l.push_back(i);
-    sx::circular_forward_list<int>::iterator iter = l.begin();
     for (int i = 0; i < k; ++i) {
-        for (int j = 1; j < m; ++j)
+        // increment m times to reach the mth person
+        // stops before the mth person
+        for (int j = 0; j < m - 1; ++j)
             ++iter;
-        sx::circular_forward_list<int>::iterator temp = iter;
-        ++temp;
+        circular_forward_list<int>::iterator temp = iter;
+        ++temp;     // temp now points to the mth person
         if (i == k - 1)
-            std::cout << *iter;
+            std::cout << *temp;
         else
-            l.erase(iter);
-        iter = temp;
+            l.erase(temp, iter);
     }
 
     return 0;
