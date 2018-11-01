@@ -71,6 +71,7 @@ public:
     iterator begin() noexcept { return head; }
     T& back() noexcept { return head->data; }
     const T& back() const noexcept { return head->data; }
+    iterator insert(const_iterator pos, const T& value, iterator prev = nullptr);
     void erase(iterator pos);
 
     friend std::ostream& operator<< <>(std::ostream& os, const circular_forward_list& l);
@@ -89,6 +90,31 @@ circular_forward_list<T>::~circular_forward_list()
             p = p->next;
             delete temp;
         }
+    }
+}
+
+/**
+* prev: an iterator pointing to the node that is previous to the iterator pos,
+* optionally supplied to eliminate the need for searching the list for a
+* previous node of pos
+*/
+template <typename T>
+typename circular_forward_list<T>::iterator
+circular_forward_list<T>::insert(const_iterator pos, const T& value, iterator prev)
+{
+    if (empty()) {
+        head->next = head = new node {value, nullptr};
+        ++var_size;
+        return head;
+    }
+    else {
+        // if prev is not a node previous to pos
+        if (prev.p == nullptr || prev.p->next != pos.p)
+            // find the previous node of pos
+            for (prev.p = head; prev.p->next != pos.p; ++prev);
+        prev.p->next = new node {value, const_cast<node *>(pos.p)};
+        ++var_size;
+        return prev.p->next;
     }
 }
 
