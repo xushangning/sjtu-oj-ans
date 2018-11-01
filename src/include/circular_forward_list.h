@@ -73,7 +73,7 @@ public:
     T& back() noexcept { return head->data; }
     const T& back() const noexcept { return head->data; }
     iterator insert(const_iterator pos, const T& value, iterator prev = nullptr);
-    void erase(iterator pos);
+    void erase(iterator pos, iterator prev = nullptr);
 
     friend std::ostream& operator<< <>(std::ostream& os, const circular_forward_list& l);
 };
@@ -119,19 +119,24 @@ circular_forward_list<T>::insert(const_iterator pos, const T& value, iterator pr
     }
 }
 
+/**
+* prev: an iterator pointing to the node that is previous to the iterator pos,
+* optionally supplied to eliminate the need for searching the list for a
+* previous node of pos
+*/
 template <typename T>
-void circular_forward_list<T>::erase(iterator pos)
+void circular_forward_list<T>::erase(iterator pos, iterator prev)
 {
-    node * prev = head;         // previous node of pos
+    if (prev.p == nullptr || prev.p->next != pos.p)
+        // find the previous node
+        for (prev.p = head; prev.p->next != pos.p; ++prev);
     // assume a non-empty list as we are deleting nodes
-    while (prev->next != pos.p)   // find the previous node
-        prev = prev->next;
-    if (prev == pos.p)            // deleting the only remaining node
+    if (prev.p == pos.p)            // deleting the only remaining node
         head = nullptr;
     else {
         if (head == pos.p)       // deleting head
             head = pos.p->next;
-        prev->next = pos.p->next;
+        prev.p->next = pos.p->next;
     }
     --var_size;
     delete pos.p;
