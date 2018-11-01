@@ -1,8 +1,15 @@
 #ifndef CIRCULAR_FORWARD_LIST_H_
 #define CIRCULAR_FORWARD_LIST_H_
 
+#include <iostream>
+
 namespace sx
 {
+
+template <typename T> class circular_forward_list;
+
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const circular_forward_list<T>& l);
 
 template <typename T>
 class circular_forward_list
@@ -65,7 +72,8 @@ public:
     T& back() noexcept { return head->data; }
     const T& back() const noexcept { return head->data; }
     void erase(iterator i);
-    void print() const noexcept;
+
+    friend std::ostream& operator<< <>(std::ostream& os, const circular_forward_list& l);
 };
 
 // watch out for n = 1
@@ -95,14 +103,17 @@ void circular_forward_list<T>::erase(iterator i)
 }
 
 template <typename T>
-void circular_forward_list<T>::print() const noexcept
+std::ostream& operator<<(std::ostream& os, const circular_forward_list<T>& l)
 {
-    node * p = head;
-    while (p != tail) {
-        std::cout << p->data << ' ';
-        p = p->next;
+    if (l.head) {
+        typename circular_forward_list<T>::node * p = l.head->next;
+        os << l.head->data;
+        while (p != l.head) {
+            os << ' ' << p->data;
+            p = p->next;
+        }
     }
-    std::cout << p->data << std::endl;
+    return os;
 }
 
 }
