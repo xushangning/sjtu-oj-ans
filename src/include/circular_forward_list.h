@@ -59,6 +59,7 @@ public:
             return temp;
         }
         T& operator*() const noexcept { return p->data; }
+        operator const_iterator() { return p; }
 
         friend class circular_forward_list;
     };
