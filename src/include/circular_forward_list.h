@@ -64,9 +64,6 @@ public:
     iterator begin() noexcept { return head; }
     T& back() noexcept { return head->data; }
     const T& back() const noexcept { return head->data; }
-    void push_back(const T& value);
-    void push_back(T&& value);
-    void pop_back();
     void erase(iterator i);
     void print() const noexcept;
 };
@@ -83,47 +80,6 @@ circular_forward_list<T>::~circular_forward_list()
         delete temp;
     }
     delete head;
-}
-
-template <typename T>
-void circular_forward_list<T>::push_back(const T& value)
-{
-    if (empty()) {
-        head = new node {value, nullptr};
-        head->next = tail = head;
-    }
-    else
-        tail->next = head = new node {value, head};
-    ++var_size;
-}
-
-template <typename T>
-void circular_forward_list<T>::push_back(T&& value)
-{
-    if (empty()) {
-        head = new node {value, nullptr};
-        head->next = tail = head;
-    }
-    else
-        tail->next = head = new node {value, head};
-    ++var_size;
-}
-
-template <typename T>
-void circular_forward_list<T>::pop_back()
-{
-    if (!empty()) {
-        if (head->next) {
-            node * temp = head;
-            head = head->next;
-            delete temp;
-        }
-        else {
-            delete head;
-            head = nullptr;  // must be set to the null pointer
-        }
-        --var_size;
-    }
 }
 
 template <typename T>
