@@ -21,7 +21,7 @@ private:
         node * next;
     };
     int var_size;
-    node * head, * tail;
+    node * head;
 public:
     class const_iterator
     {
@@ -63,7 +63,7 @@ public:
         friend class circular_forward_list;
     };
 
-    circular_forward_list() noexcept : var_size(0), head(nullptr), tail(nullptr) {}
+    circular_forward_list() noexcept : var_size(0), head(nullptr) {}
     ~circular_forward_list();
 
     int size() const noexcept { return var_size; }
