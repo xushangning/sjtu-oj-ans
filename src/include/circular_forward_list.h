@@ -76,18 +76,20 @@ public:
     friend std::ostream& operator<< <>(std::ostream& os, const circular_forward_list& l);
 };
 
-// watch out for n = 1
 template <typename T>
 circular_forward_list<T>::~circular_forward_list()
 {
-    node * temp;
-    while (head != tail)
-    {
-        temp = head;
-        head = head->next;
-        delete temp;
+    if (head) {
+        node * temp, * p = head->next;
+        delete head;        // delete the head first
+        // After deleting the head, delete the nodes after head until the list
+        // circles back to head.
+        while (p != head) {
+            temp = p;
+            p = p->next;
+            delete temp;
+        }
     }
-    delete head;
 }
 
 template <typename T>
