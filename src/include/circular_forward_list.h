@@ -17,7 +17,7 @@ class circular_forward_list
 private:
     struct node
     {
-        T data;
+        T key;
         node * next;
     };
     int var_size;
@@ -38,7 +38,7 @@ public:
             p = p->next;
             return temp;
         }
-        const T & operator*() const noexcept { return p->data; }
+        const T & operator*() const noexcept { return p->key; }
 
         friend class circular_forward_list;
     };
@@ -58,7 +58,7 @@ public:
             p = p->next;
             return temp;
         }
-        T& operator*() const noexcept { return p->data; }
+        T& operator*() const noexcept { return p->key; }
         operator const_iterator() { return p; }
 
         friend class circular_forward_list;
@@ -70,8 +70,8 @@ public:
     int size() const noexcept { return var_size; }
     bool empty() const noexcept { return !var_size; }
     iterator begin() noexcept { return head; }
-    T& back() noexcept { return head->data; }
-    const T& back() const noexcept { return head->data; }
+    T& back() noexcept { return head->key; }
+    const T& back() const noexcept { return head->key; }
     iterator insert(const_iterator pos, const T& value, iterator prev = nullptr);
     void erase(iterator pos, iterator prev = nullptr);
 
@@ -147,9 +147,9 @@ std::ostream& operator<<(std::ostream& os, const circular_forward_list<T>& l)
 {
     if (l.head) {
         typename circular_forward_list<T>::node * p = l.head->next;
-        os << l.head->data;
+        os << l.head->key;
         while (p != l.head) {
-            os << ' ' << p->data;
+            os << ' ' << p->key;
             p = p->next;
         }
     }
