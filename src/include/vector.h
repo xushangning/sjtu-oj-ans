@@ -30,6 +30,10 @@ public:
     const_iterator begin() const noexcept { return data; }
     iterator end() noexcept { return data + var_size; }
     const_iterator end() const noexcept { return data + var_size; }
+    T& front() noexcept { return *data; }
+    const T& front() const noexcept { return *data; }
+    T& back() noexcept { return data[var_size - 1]; }
+    const T& back() const noexcept { return data[var_size - 1]; }
     int size() const noexcept { return var_size; }
     int capacity() const noexcept { return var_capacity; }
 
