@@ -128,8 +128,10 @@ typename vector<T>::iterator vector<T>::insert(iterator pos, const T & value)
         expand();
     for (iterator i = end(); i > begin() + offset; --i)
         *i = *(i - 1);
-    *(begin() + offset) = value;
+    iterator value_pos = begin() + offset;
+    *value_pos = value;
     ++var_size;
+    return value_pos;
 }
 
 template <typename T>
