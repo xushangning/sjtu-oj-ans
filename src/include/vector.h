@@ -36,6 +36,11 @@ public:
     iterator insert(iterator pos, const T & value);
     template <typename InputIt>
     iterator insert(const_iterator pos, InputIt first, InputIt last);
+    iterator erase(const_iterator pos);
+
+    void push_back(const T& value) { insert(end(), value); }
+    void push_back(T&& value) { insert(end(), value); }
+    void pop_front() { erase(begin()); }
 
     const T & operator[](int i) const noexcept { return data[i]; }
     T & operator[](int i) noexcept { return data[i]; }
@@ -144,6 +149,15 @@ typename vector<T>::iterator vector<T>::insert(const_iterator pos,
         *i = *j;
     var_size += insertion_size;
     return new_pos;
+}
+
+template <typename T>
+typename vector<T>::iterator vector<T>::erase(const_iterator pos)
+{
+    for (iterator i = const_cast<iterator>(pos); i + 1 < end(); ++i)
+        *i = *(i + 1);
+    --var_size;
+    return const_cast<iterator>(++pos);
 }
 
 template <typename T>
