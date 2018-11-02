@@ -1,8 +1,5 @@
 #include <iostream>
 
-namespace sx
-{
-
 template <typename T>
 class vector
 {
@@ -15,14 +12,6 @@ public:
     typedef const T * const_iterator;
 
     vector(int var_size_ = 0);
-    vector(const vector & v);
-    vector(vector && v) noexcept
-        : var_size(v.var_size), var_capacity(v.var_capacity), data(v.data)
-    {
-        v.data = nullptr;
-    }
-    const vector & operator=(const vector & v);
-    const vector & operator=(vector && v) noexcept;
     ~vector() { delete []data; }
 
     iterator begin() noexcept { return data; }
@@ -33,12 +22,11 @@ public:
     int capacity() const noexcept { return var_capacity; }
 
     iterator insert(iterator pos, const T & value);
-    template <typename InputIt>
-    iterator insert(const_iterator pos, InputIt first, InputIt last);
+    iterator erase(const_iterator pos);
 
-    const T & operator[](int i) const noexcept { return data[i]; }
-    T & operator[](int i) noexcept { return data[i]; }
-    vector operator+(const vector & v) const;
+    void push_back(const T& value) { insert(end(), value); }
+    void push_back(T&& value) { insert(end(), value); }
+    void pop_front() { erase(begin()); }
 };
 
 template <typename T>
@@ -72,48 +60,6 @@ vector<T>::vector(int var_size_) : var_size(var_size_),
 }
 
 template <typename T>
-vector<T>::vector(const vector & v)
-        : var_size(v.var_size), var_capacity(v.var_size)
-{
-    if (var_size) {
-        data = new T [var_size];
-        for (int i = 0; i < var_size; ++i)
-            data[i] = v.data[i];
-    }
-    else
-        data = nullptr;
-}
-
-template <typename T>
-const vector<T> & vector<T>::operator=(const vector & v)
-{
-    if (this == &v)
-        return *this;
-    delete []data;
-    v.var_size = v.var_capacity = v.var_size;
-    if (var_size) {
-        data = new T [var_size];
-        for (int i = 0; i < var_size; ++i)
-            data[i] = v.data[i];
-    }
-    else
-        data = nullptr;
-    return *this;
-}
-
-template <typename T>
-const vector<T> & vector<T>::operator=(vector && v) noexcept
-{
-    if (this == &v)
-        return *this;
-    delete []data;
-    v.var_size = v.var_capacity = v.var_size;
-    data = v.data;
-    v.data = nullptr;
-    return *this;
-}
-
-template <typename T>
 typename vector<T>::iterator vector<T>::insert(iterator pos, const T & value)
 {
     // pos will be invalidated if space is reallocated
@@ -122,57 +68,57 @@ typename vector<T>::iterator vector<T>::insert(iterator pos, const T & value)
         expand();
     for (iterator i = end(); i > begin() + offset; --i)
         *i = *(i - 1);
-    *(begin() + offset) = value;
+    iterator value_pos = begin() + offset;
+    *value_pos = value;
     ++var_size;
+    return value_pos;
 }
 
 template <typename T>
-    template <typename InputIt>
-typename vector<T>::iterator vector<T>::insert(const_iterator pos,
-                                      InputIt first, InputIt last)
+typename vector<T>::iterator vector<T>::erase(const_iterator pos)
 {
-    int offset = pos - begin();
-    int insertion_size = last - first;
-    if (insertion_size + var_size > var_capacity)
-        expand(insertion_size + var_size);
-    iterator new_pos = begin() + offset;
-    for (iterator i = end() - 1; i >= new_pos; --i)
-        *(i + insertion_size) = *i;
-    InputIt j = first;
-    for (iterator i = new_pos; j < last; ++i, ++j)
-        *i = *j;
-    var_size += insertion_size;
-    return new_pos;
+    for (iterator i = const_cast<iterator>(pos); i + 1 < end(); ++i)
+        *i = *(i + 1);
+    --var_size;
+    return const_cast<iterator>(++pos);
 }
 
-template <typename T>
-vector<T> vector<T>::operator+(const vector & v) const
+template <typename T, typename Container>
+class queue
 {
-    vector result(*this);
-    result.insert(result.end(), v.begin(), v.end());
-    return result;
-}
+protected:
+    Container c;
+public:
+    int size() const { return c.size(); }
+    void push(const T& value) { c.push_back(value); }
+    void push(T&& value) { c.push_back(value); }
+    void pop() { c.pop_front(); }
 
+    T average() const noexcept;
+};
+
+template <typename T, typename Container>
+T queue<T, Container>::average() const noexcept
+{
+    T sum = 0;
+    for (const T& x : c)
+        sum += x;
+    return sum / size();
 }
 
 int main()
 {
     std::ios_base::sync_with_stdio(false);
-    sx::vector<int> v;
+    queue<int, vector<int>> q;
     int n, m;
     std::cin >> n >> m;
     int temp;
     for (int i = 0; i < m; ++i) {
         std::cin >> temp;
-        v.insert(v.end(), temp);
-    }
-
-    int sum;
-    for (sx::vector<int>::iterator i = v.begin(); i < v.end(); ++i) {
-        sum = 0;
-        for (int j = 0; j < n && i - j >= v.begin(); ++j)
-            sum += *(i - j);
-        std::cout << sum / ((i - v.begin()) >= n ? n : i - v.begin() + 1) << std::endl;
+        if (q.size() == n)
+            q.pop();
+        q.push(temp);
+        std::cout << q.average() << std::endl;
     }
 
     return 0;
