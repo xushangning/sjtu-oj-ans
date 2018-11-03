@@ -1,5 +1,5 @@
-#ifndef FORWARD_LIST_H_
-#define FORWARD_LIST_H_
+#ifndef RFORWARD_LIST_H_
+#define RFORWARD_LIST_H_
 
 namespace sx
 {
@@ -97,4 +97,4 @@ void rforward_list<T>::pop_back()
 
 }
 
-#endif // FORWARD_LIST_H_
+#endif // RFORWARD_LIST_H_
