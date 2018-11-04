@@ -1,6 +1,8 @@
 #ifndef LINKED_BINARY_TREE_H
 #define LINKED_BINARY_TREE_H
 
+#include "queue.h"
+
 namespace sx
 {
 
@@ -41,10 +43,44 @@ public:
             delete root;
     }
 
+    bool complete() const;
+
     template <typename RandomIt>
     static node * create_root(RandomIt preorder_first, RandomIt preorder_last,
                               RandomIt inorder_first);
 };
+
+/**
+* Check whether the binary tree is complete.
+*/
+template <typename T>
+bool linked_binary_tree<T>::complete() const
+{
+    queue<const node *> q;
+    // will be set to false once a 0 or 1 degree node is encountered
+    bool no_leaf_node = true;
+    q.push(root);
+
+    const node * n;
+    while (!q.empty()) {
+        n = q.front();
+        q.pop();
+        // if the node has only a right child
+        if (n->left == nullptr && n->right)
+            return false;
+        if (no_leaf_node) {
+            if (n->degree() < 2)
+                no_leaf_node = false;
+        }
+        else if (n->degree())
+            return false;
+        if (n->left)
+            q.push(n->left);
+        if (n->right)
+            q.push(n->right);
+    }
+    return true;
+}
 
 /**
 * Construct a tree rooted at the returned node from its preorder and inorder
