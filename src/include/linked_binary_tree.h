@@ -17,16 +17,29 @@ public:
         node() noexcept : left(nullptr), right(nullptr) {}
         node(const T& key_, node * left_ = nullptr, node * right_ = nullptr) noexcept
             : key(key_), left(left_), right(right_) {}
+        ~node()
+        {
+            delete left;
+            delete right;
+        }
 
         friend class linked_binary_tree;
     };
 private:
     node * root;
+    // whether the tree is created in the class with dynamic memory
+    bool root_created_in_class;
 public:
-    linked_binary_tree(node * root_) noexcept : root(root_) {}
+    linked_binary_tree(node * root_) noexcept : root(root_), root_created_in_class(false) {}
     template <typename RandomIt>
     linked_binary_tree(RandomIt preorder_first, RandomIt preorder_last, RandomIt inorder_first)
-        : root(create_root(preorder_first, preorder_last, inorder_first)) {}
+        : root(create_root(preorder_first, preorder_last, inorder_first)),
+        root_created_in_class(true) {}
+    ~linked_binary_tree()
+    {
+        if (root_created_in_class)
+            delete root;
+    }
 
     template <typename RandomIt>
     static node * create_root(RandomIt preorder_first, RandomIt preorder_last,
