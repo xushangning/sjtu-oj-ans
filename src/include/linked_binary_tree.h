@@ -19,28 +19,23 @@ public:
         node() noexcept : left(nullptr), right(nullptr) {}
         node(const T& key_, node * left_ = nullptr, node * right_ = nullptr) noexcept
             : key(key_), left(left_), right(right_) {}
-        ~node()
-        {
-            delete left;
-            delete right;
-        }
 
         friend class linked_binary_tree;
     };
 private:
     node * root;
-    // whether the tree is created in the class with dynamic memory
-    bool root_created_in_class;
+    // whether the tree rooted at node * root is created with dynamic memory
+    bool is_dynamic;
 public:
-    linked_binary_tree(node * root_) noexcept : root(root_), root_created_in_class(false) {}
+    linked_binary_tree(node * root_) noexcept : root(root_), is_dynamic(false) {}
     template <typename RandomIt>
     linked_binary_tree(RandomIt preorder_first, RandomIt preorder_last, RandomIt inorder_first)
         : root(create_root(preorder_first, preorder_last, inorder_first)),
-        root_created_in_class(true) {}
+        is_dynamic(true) {}
     ~linked_binary_tree()
     {
-        if (root_created_in_class)
-            delete root;
+        if (is_dynamic)
+            erase(root);
     }
 
     bool complete() const;
@@ -48,6 +43,7 @@ public:
     template <typename RandomIt>
     static node * create_root(RandomIt preorder_first, RandomIt preorder_last,
                               RandomIt inorder_first);
+    static void erase(node * n);
 };
 
 /**
@@ -117,6 +113,19 @@ typename linked_binary_tree<T>::node * linked_binary_tree<T>::create_root(
             preorder_first + left_size + 1, preorder_last, root_pos + 1);
 
     return root;
+}
+
+/**
+* Free memory allocated to nodes in a postorder fashion.
+*/
+template <typename T>
+void linked_binary_tree<T>::erase(node * n)
+{
+    if (n->left)
+        erase(n->left);
+    if (n->right)
+        erase(n->right);
+    delete n;
 }
 
 }
