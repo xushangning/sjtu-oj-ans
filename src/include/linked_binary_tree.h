@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include "queue.h"
+#include "stack.h"
 
 namespace sx
 {
@@ -29,7 +30,57 @@ private:
     node * root;
     // whether the tree rooted at node * root is created with dynamic memory
     bool is_dynamic;
+
+    /**
+    * An iterator class that iterates on nodes
+    */
+    class node_iterator
+    {
+    private:
+        stack<node *> s;
+    public:
+        node_iterator() = default;
+        node_iterator(node * root) { s.push(root); }
+
+        node_iterator& operator++();
+        node * operator*() const noexcept { return s.top(); }
+        bool operator==(const node_iterator& ni) const noexcept
+        {
+            // Two iterators are equal if and only if:
+            // 1. their stacks both are empty;
+            // 2. their stacks have the same element at top.
+            return s.empty() && ni.s.empty() ||
+                (!s.empty() && !ni.s.empty() && s.top() == ni.s.top());
+        }
+        bool operator!=(const node_iterator& ni) const noexcept { return !(*this == ni); }
+    };
 public:
+    /**
+    * An iterator class that iterates on keys
+    */
+    class iterator : private node_iterator
+    {
+    private:
+        static iterator end_iter;   // for signaling past-the-end
+    public:
+        iterator() = default;
+        iterator(node * root) : node_iterator(root) {}
+
+        iterator& operator++()
+        {
+            node_iterator::operator++();
+            return *this;
+        }
+        T& operator*() const noexcept { return node_iterator::operator*()->key; }
+        bool operator==(const iterator& i) const noexcept
+        {
+            return node_iterator::operator==(dynamic_cast<const node_iterator&>(i));
+        }
+        bool operator!=(const iterator& i) const noexcept { return !(*this == i); }
+
+        friend class linked_binary_tree;
+    };
+
     linked_binary_tree(node * root_) noexcept : root(root_), is_dynamic(false) {}
     template <typename RandomIt>
     linked_binary_tree(RandomIt preorder_first, RandomIt preorder_last, RandomIt inorder_first)
@@ -41,6 +92,9 @@ public:
             erase(root);
     }
 
+    iterator begin() { return root; }
+    iterator end() { return iterator::end_iter; }
+
     bool complete() const;
 
     template <typename RandomIt>
@@ -49,6 +103,22 @@ public:
     static node * link_nodes(node * nodes, int arr_size, bool read_key = true);
     static void erase(node * n);
 };
+
+template <typename T>
+typename linked_binary_tree<T>::node_iterator&
+linked_binary_tree<T>::node_iterator::operator++()
+{
+    node * n = s.top();
+    s.pop();
+    if (n->right)
+        s.push(n->right);
+    if (n->left)
+        s.push(n->left);
+    return *this;
+}
+
+template <typename T>
+typename linked_binary_tree<T>::iterator linked_binary_tree<T>::iterator::end_iter;
 
 /**
 * Check whether the binary tree is complete.
