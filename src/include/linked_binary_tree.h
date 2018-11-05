@@ -20,6 +20,8 @@ public:
         node(const T& key_, node * left_ = nullptr, node * right_ = nullptr) noexcept
             : key(key_), left(left_), right(right_) {}
 
+        int degree() const noexcept { return bool(left) + bool(right); }
+
         friend class linked_binary_tree;
     };
 private:
