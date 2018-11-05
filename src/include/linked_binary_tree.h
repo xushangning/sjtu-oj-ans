@@ -1,6 +1,7 @@
 #ifndef LINKED_BINARY_TREE_H
 #define LINKED_BINARY_TREE_H
 
+#include <iostream>
 #include "queue.h"
 
 namespace sx
@@ -14,9 +15,9 @@ public:
     {
     private:
         T key;
-        node * left, * right;
+        node * p, * left, * right;
     public:
-        node() noexcept : left(nullptr), right(nullptr) {}
+        node() noexcept : p(nullptr), left(nullptr), right(nullptr) {}
         node(const T& key_, node * left_ = nullptr, node * right_ = nullptr) noexcept
             : key(key_), left(left_), right(right_) {}
 
@@ -45,6 +46,7 @@ public:
     template <typename RandomIt>
     static node * create_root(RandomIt preorder_first, RandomIt preorder_last,
                               RandomIt inorder_first);
+    static node * link_nodes(node * nodes, int arr_size, bool read_key = true);
     static void erase(node * n);
 };
 
@@ -114,6 +116,55 @@ typename linked_binary_tree<T>::node * linked_binary_tree<T>::create_root(
         root->right = create_root(
             preorder_first + left_size + 1, preorder_last, root_pos + 1);
 
+    return root;
+}
+
+/**
+* Link nodes in an array together to form a tree based on input in the form
+*     <node-index> <node-index> <key>
+* from standard input.
+*
+* nodes: the array of nodes
+* arr_size: the size of the array
+* read_key: read <key> if true. true by default.
+*
+* return: the root in the array of nodes
+*/
+template <typename T>
+typename linked_binary_tree<T>::node *
+linked_binary_tree<T>::link_nodes(node * nodes, int arr_size, bool read_key)
+{
+    int left, right;
+    // <node-index> == 0 for no child
+    //              == i (i = 1, ..., arr_size) for node[i]
+    if (read_key)
+        for (int i = 0; i < arr_size; ++i) {
+            std::cin >> left >> right >> nodes[i].key;
+            if (left) {
+                nodes[i].left = &nodes[left - 1];
+                nodes[left - 1].p = &nodes[i];
+            }
+            if (right) {
+                nodes[i].right = &nodes[right - 1];
+                nodes[right - 1].p = &nodes[i];
+            }
+        }
+    else
+        for (int i = 0; i < arr_size; ++i) {
+            std::cin >> left >> right;
+            if (left) {
+                nodes[i].left = &nodes[left - 1];
+                nodes[left - 1].p = &nodes[i];
+            }
+            if (right) {
+                nodes[i].right = &nodes[right - 1];
+                nodes[right - 1].p = &nodes[i];
+            }
+        }
+
+    // find the root in the array of nodes
+    node * root;
+    for (root = nodes; root->p; root = root->p);
     return root;
 }
 
