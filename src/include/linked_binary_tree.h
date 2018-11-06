@@ -26,59 +26,78 @@ public:
 
         friend class linked_binary_tree;
     };
+
+    enum class traversal_order {pre, in, post, level};
 private:
     node * root;
     // whether the tree rooted at node * root is created with dynamic memory
     bool is_dynamic;
 
     /**
-    * An iterator class that iterates on nodes
+    * An interface for iterators that iterate on nodes
     */
     class node_iterator
+    {
+    public:
+        virtual ~node_iterator() = default;
+
+        virtual node_iterator& operator++() = 0;
+        virtual node * operator*() const noexcept = 0;
+    };
+
+    /**
+    * A preorder iterator
+    */
+    class node_iterator_preorder : public node_iterator
     {
     private:
         stack<node *> s;
     public:
-        node_iterator() = default;
-        node_iterator(node * root) { s.push(root); }
-
-        node_iterator& operator++();
-        node * operator*() const noexcept { return s.top(); }
-        bool operator==(const node_iterator& ni) const noexcept
+        node_iterator_preorder(node * root)
         {
-            // Two iterators are equal if and only if:
-            // 1. their stacks both are empty;
-            // 2. their stacks have the same element at top.
-            return s.empty() && ni.s.empty() ||
-                (!s.empty() && !ni.s.empty() && s.top() == ni.s.top());
+            if (root)
+                s.push(root);
         }
-        bool operator!=(const node_iterator& ni) const noexcept { return !(*this == ni); }
+
+        node_iterator_preorder& operator++();
+        node * operator*() const noexcept { return s.top(); }
+        bool operator==(const node_iterator_preorder& ni) const noexcept
+        {
+            // Two iterators are equal if and only if
+            // their stacks both are empty.
+            return s.empty() && ni.s.empty();
+        }
     };
 public:
     /**
-    * An iterator class that iterates on keys
+    * An iterator class that iterates on keys. Internally, there is a pointer
+    * to node_iterator, ni, that decides which node_iterator to use. The
+    * iterator iterates on nodes and returns keys if deferenced.
+    *
+    * Static iterators like preorder_end indicate past-the-end. They are
+    * returned by reference by linked_binary_tree::end().
     */
-    class iterator : private node_iterator
+    class iterator
     {
     private:
-        static iterator end_iter;   // for signaling past-the-end
+        traversal_order order;
+        node_iterator * ni;
     public:
-        iterator() = default;
-        iterator(node * root) : node_iterator(root) {}
+        iterator(node * root, traversal_order order_ = traversal_order::pre);
+        iterator(const iterator& i);
+        ~iterator() { delete ni; }
 
         iterator& operator++()
         {
-            node_iterator::operator++();
+            ++*ni;
             return *this;
         }
-        T& operator*() const noexcept { return node_iterator::operator*()->key; }
-        bool operator==(const iterator& i) const noexcept
-        {
-            return node_iterator::operator==(dynamic_cast<const node_iterator&>(i));
-        }
+        T& operator*() const noexcept { return (**ni)->key; }
+        bool operator==(const iterator& i) const noexcept;
         bool operator!=(const iterator& i) const noexcept { return !(*this == i); }
 
-        friend class linked_binary_tree;
+        // for indicating past-the-end
+        static iterator preorder_end;
     };
 
     linked_binary_tree(node * root_) noexcept : root(root_), is_dynamic(false) {}
@@ -92,8 +111,11 @@ public:
             erase(root);
     }
 
-    iterator begin() { return root; }
-    iterator end() { return iterator::end_iter; }
+    iterator begin(traversal_order order = traversal_order::pre) { return iterator(root, order); }
+    iterator& end(traversal_order order = traversal_order::pre)
+    {
+        return iterator::preorder_end;
+    }
 
     bool complete() const;
 
@@ -105,8 +127,12 @@ public:
 };
 
 template <typename T>
-typename linked_binary_tree<T>::node_iterator&
-linked_binary_tree<T>::node_iterator::operator++()
+typename linked_binary_tree<T>::iterator
+linked_binary_tree<T>::iterator::preorder_end(nullptr);
+
+template <typename T>
+typename linked_binary_tree<T>::node_iterator_preorder&
+linked_binary_tree<T>::node_iterator_preorder::operator++()
 {
     node * n = s.top();
     s.pop();
@@ -118,7 +144,43 @@ linked_binary_tree<T>::node_iterator::operator++()
 }
 
 template <typename T>
-typename linked_binary_tree<T>::iterator linked_binary_tree<T>::iterator::end_iter;
+linked_binary_tree<T>::iterator::iterator(node * root, traversal_order order_)
+        : order(order_)
+{
+    switch (order)
+    {
+        case traversal_order::pre:
+            ni = new node_iterator_preorder(root);
+            break;
+    }
+}
+
+template <typename T>
+linked_binary_tree<T>::iterator::iterator(const iterator& i) : order(i.order)
+{
+    switch (order)
+    {
+        case traversal_order::pre:
+            ni = new node_iterator_preorder(* dynamic_cast<const node_iterator_preorder *>(i.ni));
+            break;
+    }
+}
+
+template <typename T>
+bool linked_binary_tree<T>::iterator::operator==(const iterator& i) const noexcept
+{
+    if (order != i.order)
+        return false;
+    else
+        switch (order)
+        {
+            case traversal_order::pre:
+                return * dynamic_cast<const node_iterator_preorder *>(ni)
+                    == * dynamic_cast<const node_iterator_preorder *>(i.ni);
+            default:
+                return false;
+        }
+}
 
 /**
 * Check whether the binary tree is complete.
