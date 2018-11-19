@@ -85,6 +85,30 @@ private:
             return s.empty() && ni.s.empty();
         }
     };
+
+    /**
+    * A level-order iterator for trees with more branches
+    */
+    class node_iterator_levelorder : public node_iterator
+    {
+    private:
+        queue<node *> q;
+    public:
+        node_iterator_levelorder(node * root)
+        {
+            if (root)
+                q.push(root);
+        }
+
+        node * operator*() const noexcept { return q.front(); }
+        node_iterator_levelorder& operator++();
+        bool operator==(const node_iterator_levelorder& ni) const noexcept
+        {
+            // Two level-order iterators are equal if and only if
+            // their queues both are empty.
+            return q.empty() && ni.q.empty();
+        }
+    };
 public:
     /**
     * An iterator class that iterates on keys. Internally, there is a pointer
@@ -116,6 +140,7 @@ public:
         // for indicating past-the-end
         static iterator preorder_end;
         static iterator inorder_end;
+        static iterator levelorder_end;
     };
 
     linked_binary_tree(node * root_) noexcept : root(root_), is_dynamic(false) {}
@@ -183,6 +208,20 @@ linked_binary_tree<T>::node_iterator_inorder::operator++()
 }
 
 template <typename T>
+typename linked_binary_tree<T>::node_iterator_levelorder&
+linked_binary_tree<T>::node_iterator_levelorder::operator++()
+{
+    node * n = q.front();
+    if (n->left)
+        q.push(n->left);        // enqueue next level
+    if (n->right)
+        q.front() = n->right;   // modify the front element
+    else
+        q.pop();                // go down one level
+    return *this;
+}
+
+template <typename T>
 linked_binary_tree<T>::iterator::iterator(node * root, traversal_order order_)
         : order(order_)
 {
@@ -193,6 +232,9 @@ linked_binary_tree<T>::iterator::iterator(node * root, traversal_order order_)
             break;
         case traversal_order::in:
             ni = new node_iterator_inorder(root);
+            break;
+        case traversal_order::level:
+            ni = new node_iterator_levelorder(root);
             break;
     }
 }
@@ -207,6 +249,9 @@ linked_binary_tree<T>::iterator::iterator(const iterator& i) : order(i.order)
             break;
         case traversal_order::in:
             ni = new node_iterator_inorder(* dynamic_cast<const node_iterator_inorder *>(i.ni));
+            break;
+        case traversal_order::level:
+            ni = new node_iterator_levelorder(* dynamic_cast<const node_iterator_levelorder *>(i.ni));
             break;
     }
 }
@@ -225,6 +270,9 @@ bool linked_binary_tree<T>::iterator::operator==(const iterator& i) const noexce
             case traversal_order::in:
                 return * dynamic_cast<const node_iterator_inorder *>(ni)
                     == * dynamic_cast<const node_iterator_inorder *>(i.ni);
+            case traversal_order::level:
+                return * dynamic_cast<const node_iterator_levelorder *>(ni)
+                    == * dynamic_cast<const node_iterator_levelorder *>(i.ni);
         }
 }
 
@@ -237,6 +285,10 @@ typename linked_binary_tree<T>::iterator
 linked_binary_tree<T>::iterator::inorder_end(nullptr, traversal_order::in);
 
 template <typename T>
+typename linked_binary_tree<T>::iterator
+linked_binary_tree<T>::iterator::levelorder_end(nullptr, traversal_order::level);
+
+template <typename T>
 typename linked_binary_tree<T>::iterator&
 linked_binary_tree<T>::end(traversal_order order) noexcept
 {
@@ -246,6 +298,8 @@ linked_binary_tree<T>::end(traversal_order order) noexcept
             return iterator::preorder_end;
         case traversal_order::in:
             return iterator::inorder_end;
+        case traversal_order::level:
+            return iterator::levelorder_end;
     }
 }
 
