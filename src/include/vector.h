@@ -1,8 +1,15 @@
 #ifndef VECTOR_H_
 #define VECTOR_H_
 
+#include <iostream>
+
 namespace sx
 {
+
+template <typename T> class vector;
+
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const vector<T>& v);
 
 template <typename T>
 class vector
@@ -42,13 +49,15 @@ public:
     iterator insert(const_iterator pos, InputIt first, InputIt last);
     iterator erase(const_iterator pos);
 
-    void push_back(const T& value) { insert(end(), value); }
-    void push_back(T&& value) { insert(end(), value); }
+    void push_back(const T& value);
+    void push_back(T&& value);
     void pop_front() { erase(begin()); }
 
     const T & operator[](int i) const noexcept { return data[i]; }
     T & operator[](int i) noexcept { return data[i]; }
     vector operator+(const vector & v) const;
+
+    friend std::ostream& operator<< <>(std::ostream& os, const vector& v);
 };
 
 template <typename T>
@@ -167,11 +176,40 @@ typename vector<T>::iterator vector<T>::erase(const_iterator pos)
 }
 
 template <typename T>
+void vector<T>::push_back(const T& value)
+{
+    if (var_size + 1 > var_capacity)
+        expand();
+    *end() = value;
+    ++var_size;
+}
+
+template <typename T>
+void vector<T>::push_back(T&& value)
+{
+    if (var_size + 1 > var_capacity)
+        expand();
+    *end() = value;
+    ++var_size;
+}
+
+template <typename T>
 vector<T> vector<T>::operator+(const vector & v) const
 {
     vector result(*this);
     result.insert(result.end(), v.begin(), v.end());
     return result;
+}
+
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const vector<T>& v)
+{
+    typename vector<T>::const_iterator i = v.begin();
+    for (; i < v.end() - 1; ++i)
+        os << *i << ' ';
+    if (i < v.end())
+        os << *i;
+    return os;
 }
 
 }
