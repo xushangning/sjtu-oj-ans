@@ -10,23 +10,23 @@ namespace sx
 template <typename T>
 class linked_binary_tree
 {
-protected:
+public:
     class node
     {
-    public:
+    protected:
         T key;
         node * p, * left, * right;
+    public:
         node() noexcept : p(nullptr), left(nullptr), right(nullptr) {}
         node(const T& key_, node * left_ = nullptr, node * right_ = nullptr) noexcept
             : key(key_), left(left_), right(right_) {}
 
         int degree() const noexcept { return bool(left) + bool(right); }
     };
-
+protected:
     node * root;
     // whether the tree rooted at node * root is created with dynamic memory
     bool is_dynamic;
-
 public:
     linked_binary_tree(node * root_) noexcept : root(root_), is_dynamic(false) {}
     template <typename RandomIt>
