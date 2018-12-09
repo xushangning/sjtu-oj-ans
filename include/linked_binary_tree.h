@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include "queue.h"
+#include "stack.h"
 
 namespace sx
 {
@@ -27,6 +28,52 @@ protected:
     node * root;
     // whether the tree rooted at node * root is created with dynamic memory
     bool is_dynamic;
+
+    class node_iterator_post
+    {
+    private:
+        /**
+        * @brief A frame is what get pushed into the stack.
+        */
+        struct frame
+        {
+            node * n;
+            bool going_right;
+            
+            frame(node * n_) : n(n_), going_right(true) {}
+        };
+        
+        stack<frame> s;
+        
+        /**
+        * @brief Find the first node to traverse in a post order walk of the
+        * tree rooted at root while pushing nodes encountered on the route into
+        * the stack.
+        */
+        void find_first(node * root);
+    public:
+        node_iterator_post(node * root = nullptr)
+        {
+            if (root)
+                find_first(root);
+        }
+        
+        node * operator*() const noexcept { return s.top().n; }
+        node_iterator_post & operator++();
+        bool operator==(const node_iterator_post & ni) const noexcept
+        {
+            // Two post-order iterators are equal if and only if
+            // their stacks both are empty.
+            return s.empty() && ni.s.empty();
+        }
+        bool operator!=(const node_iterator_post & ni) const noexcept
+        {
+            return !(*this == ni);
+        }
+
+        
+        static node_iterator_post end;
+    };
 public:
     linked_binary_tree(node * root_) noexcept : root(root_), is_dynamic(false) {}
     template <typename RandomIt>
@@ -38,12 +85,14 @@ public:
         if (is_dynamic)
             erase(root);
     }
+    
+    node_iterator_post begin_post() { return node_iterator_post(root); }
+    node_iterator_post end_post() { return node_iterator_post::end; }
 
     /**
     * Check whether the binary tree is complete.
     */
     bool complete() const;
-
 
     /**
     * Construct a tree rooted at the returned node from its preorder and
@@ -75,6 +124,40 @@ public:
     */
     static void erase(node * n);
 };
+
+template <typename T>
+inline void linked_binary_tree<T>::node_iterator_post::find_first(node * root)
+{
+    while (true) {
+        s.push(root);
+        if (root->left)
+            root = root->left;
+        else if (root->right)
+            root = root->right;
+        else
+            break;
+    }
+    // the node at top is the first node in a post-order walk
+    // At that node, we should not go right in a post-order walk.
+    s.top().going_right = false;
+}
+
+template <typename T>
+typename linked_binary_tree<T>::node_iterator_post &
+linked_binary_tree<T>::node_iterator_post::operator++()
+{
+    s.pop();
+    if (!s.empty() && s.top().going_right) {
+        s.top().going_right = false;
+        if (s.top().n->right)
+            find_first(s.top().n->right);
+    }
+    return *this;
+}
+
+template <typename T>
+typename linked_binary_tree<T>::node_iterator_post
+linked_binary_tree<T>::node_iterator_post::end;
 
 template <typename T>
 bool linked_binary_tree<T>::complete() const
